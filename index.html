@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کارآگاه ذهن: رمزگشای الگوها</title>
+    <!-- فونت وزیرمتن برای نمایش زیبای متون فارسی -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <!-- کتابخانه Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* انیمیشن‌های کارت و رابط کاربری */
+        .card-container {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        .card-front {
+            background: linear-gradient(145deg, #334155, #1e293b);
+            border: 2px solid #475569;
+            transform: rotateY(180deg);
+        }
+        .card-back {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 2px solid #38bdf8;
+        }
+
+        /* انیمیشن پالس نرم برای سرنخ‌ها */
+        @keyframes softPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-soft-pulse {
+            animation: softPulse 2s infinite ease-in-out;
+        }
+
+        /* نوار پیشرفت روان */
+        .progress-transition {
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-3 sm:p-6 select-none">
+
+    <!-- هدر بازی -->
+    <header class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg text-2xl">
+                🕵️‍♂️
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-l from-amber-300 via-sky-300 to-indigo-300">
+                    کارآگاه ذهن: رمزگشای الگوها
+                </h1>
+                <p class="text-xs text-slate-400">آزمایشگاه تقویت حافظه فعال و استدلال منطقی</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-4">
+            <!-- نمایشگر مرحله و امتیاز در حین بازی -->
+            <div id="hudStats" class="hidden flex items-center gap-3 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm">
+                <div class="flex items-center gap-1 text-sky-300 font-bold">
+                    <span>پرونده:</span>
+                    <span id="roundDisplay">۱/۵</span>
+                </div>
+                <div class="h-4 w-px bg-slate-600"></div>
+                <div class="flex items-center gap-1 text-amber-400 font-bold">
+                    <span>امتیاز:</span>
+                    <span id="scoreDisplay">۰</span>
+                </div>
+            </div>
+
+            <!-- دکمه صدا -->
+            <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 transition text-lg" title="قطع/وصل صدا">
+                🔊
+            </button>
+            <!-- دکمه بازگشت به خانه -->
+            <button id="homeBtn" onclick="confirmReturnHome()" class="hidden p-2.5 rounded-xl bg-slate-800 hover:bg-rose-900/60 border border-slate-600 hover:border-rose-500 transition text-sm font-bold text-slate-200">
+                خروج
+            </button>
+        </div>
+    </header>
+
+    <!-- کانتینر اصلی محتوای بازی -->
+    <main class="w-full max-w-4xl my-auto py-4">
+
+        <!-- ۱. صفحه شروع و انتخاب سطح دشواری -->
+        <section id="startScreen" class="bg-slate-900/80 backdrop-blur-lg border border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-2xl text-center">
+            <div class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs sm:text-sm font-semibold mb-4">
+                ویژه تقویت مهارت‌های شناختی دانش‌آموزان
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-black mb-4 text-white leading-tight">
+                آماده‌ای معماهای پیچیده را با قدرت <span class="text-amber-400">حافظه</span> و <span class="text-sky-400">منطق</span> حل کنی؟
+            </h2>
+            <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
+                در هر پرونده، ابتدا به مدت چند ثانیه جدول کارت‌های رنگی، اشکال و اعداد را به دقت اسکن کن و به خاطر بسپار. سپس کارت‌ها پنهان می‌شوند و باید با استفاده از <strong class="text-amber-300">حافظه فعال</strong> و <strong class="text-sky-300">استنتاج منطقی</strong> رمز پرونده را کشف کنی!
+            </p>
+
+            <!-- کارت‌های انتخاب سطح دشواری -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- سطح مبتدی -->
+                <button onclick="startGame('easy')" class="group relative bg-gradient-to-b from-emerald-900/60 to-slate-800/90 hover:from-emerald-800/80 hover:to-slate-800 border-2 border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 text-right transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-3xl">🌱</span>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300">شبکه ۲×۲</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-emerald-300 mb-1">کارآگاه تازه‌کار</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        فقط ۳ کارت ساده، ۱۰ ثانیه زمان مشاهده و سوالات مستقیم و لذت‌بخش برای گرم کردن ذهن!
+                    </p>
+                    <div class="text-xs font-bold text-emerald-400 group-hover:translate-x-[-4px] transition-transform">
+                        شروع مأموریت ←
+                    </div>
+                </button>
+
+                <!-- سطح متوسط -->
+                <button onclick="startGame('medium')" class="group relative bg-gradient-to-b from-sky-900/60 to-slate-800/90 hover:from-sky-800/80 hover:to-slate-800 border-2 border-sky-500/40 hover:border-sky-400 rounded-2xl p-5 text-right transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-3xl">🔍</span>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300">شبکه ۳×۲</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-sky-300 mb-1">کارآگاه حرفه‌ای</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        ۶ کارت، زمان مشاهده ۵ ثانیه و معماهای ترکیبی (الگوی دنباله، رنگ و مختصات).
+                    </p>
+                    <div class="text-xs font-bold text-sky-400 group-hover:translate-x-[-4px] transition-transform">
+                        شروع مأموریت ←
+                    </div>
+                </button>
+
+                <!-- سطح پیشرفته -->
+                <button onclick="startGame('hard')" class="group relative bg-gradient-to-b from-amber-900/60 to-slate-800/90 hover:from-amber-800/80 hover:to-slate-800 border-2 border-amber-500/40 hover:border-amber-400 rounded-2xl p-5 text-right transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-3xl">🧠</span>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300">شبکه ۳×۳</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-amber-300 mb-1">استاد رمزگشایی</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                        ۹ کارت، زمان مشاهده ۵.۵ ثانیه و معماهای چندمرحله‌ای استنتاج منطقی و حذفی.
+                    </p>
+                    <div class="text-xs font-bold text-amber-400 group-hover:translate-x-[-4px] transition-transform">
+                        شروع مأموریت ←
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ۲. صفحه اصلی گیم‌پلی (مشاهده + تحلیل منطقی) -->
+        <section id="gameScreen" class="hidden bg-slate-900/85 backdrop-blur-lg border border-slate-700/80 rounded-3xl p-4 sm:p-8 shadow-2xl">
+            
+            <!-- نوار وضعیت فاز فعلی و زمان‌سنج -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="phaseBadge" class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-sky-500/20 text-sky-300 border border-sky-400/40">
+                        👁️ فاز ۱: اسکن و به خاطر سپاری
+                    </span>
+                    <span id="timerText" class="text-sm sm:text-base font-black text-amber-300">
+                        ۶.۰ ثانیه
+                    </span>
+                </div>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="timerBar" class="h-full bg-gradient-to-l from-amber-400 via-sky-400 to-indigo-500 progress-transition" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- راهنمای مختصات برای درک بهتر دانش‌آموز -->
+            <div class="flex flex-col items-center justify-center mb-6">
+                <div id="gridWrapper" class="w-full max-w-md">
+                    <!-- برچسب ستون‌ها -->
+                    <div id="colHeaders" class="grid gap-2 sm:gap-3 mb-2 pr-8 text-center text-xs font-bold text-slate-400"></div>
+                    
+                    <div class="flex items-stretch gap-2">
+                        <!-- برچسب ردیف‌ها -->
+                        <div id="rowHeaders" class="flex flex-col justify-around text-xs font-bold text-slate-400 w-6 text-center"></div>
+                        
+                        <!-- شبکه کارت‌ها -->
+                        <div id="cardsGrid" class="grid gap-2.5 sm:gap-3.5 flex-1"></div>
+                    </div>
+                </div>
+
+                <!-- دکمه رد کردن زمان مشاهده در صورت آماده بودن -->
+                <button id="skipObserveBtn" onclick="endObservePhase()" class="mt-5 px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs sm:text-sm font-bold text-sky-300 transition">
+                    به خاطر سپردم! برو به معما ⚡
+                </button>
+            </div>
+
+            <!-- بخش معمای تحلیلی و گزینه‌ها (فاز ۲) -->
+            <div id="puzzleSection" class="hidden border-t border-slate-700/80 pt-6 mt-2">
+                <div class="bg-indigo-950/70 border border-indigo-500/40 rounded-2xl p-4 sm:p-5 mb-5 shadow-inner">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-amber-300 text-xs font-bold mb-2">
+                        <div class="flex items-center gap-2">
+                            <span>🧩 معمای پرونده:</span>
+                            <span id="puzzleCategoryBadge" class="bg-amber-500/20 px-2 py-0.5 rounded text-amber-200">استنتاج ترکیبی</span>
+                        </div>
+                        <button id="hintBtn" onclick="useHint()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-bold transition flex items-center gap-1">
+                            <span>💡 سرنخ (نمایش موقت ۱ کارت)</span>
+                        </button>
+                    </div>
+                    <p id="puzzleQuestion" class="text-base sm:text-lg font-bold text-white leading-relaxed">
+                        در حال بارگذاری معما...
+                    </p>
+                </div>
+
+                <!-- گزینه‌های پاسخ -->
+                <div id="optionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
+
+                <!-- باکس بازخورد آموزشی پس از پاسخ -->
+                <div id="feedbackBox" class="hidden rounded-2xl p-4 sm:p-5 border transition-all duration-300">
+                    <div class="flex items-start gap-3">
+                        <div id="feedbackIcon" class="text-2xl sm:text-3xl mt-0.5">💡</div>
+                        <div class="flex-1">
+                            <h4 id="feedbackTitle" class="font-extrabold text-base sm:text-lg mb-1">تحلیل کارآگاه:</h4>
+                            <p id="feedbackExplanation" class="text-xs sm:text-sm text-slate-200 leading-relaxed"></p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="nextRoundBtn" onclick="nextRound()" class="px-6 py-2.5 rounded-xl bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-sm shadow-lg transition transform active:scale-95">
+                            پرونده بعدی ←
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ۳. کارنامه نهایی تحلیل عملکرد حافظه و منطق -->
+        <section id="reportScreen" class="hidden bg-slate-900/90 backdrop-blur-lg border border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 text-4xl shadow-xl mb-4">
+                    🏆
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black text-white mb-2">کارنامه شناختی کارآگاه ذهن</h2>
+                <p id="reportRankTitle" class="text-amber-400 font-bold text-base sm:text-lg">سطح: کارآگاه ارشد استدلال</p>
+            </div>
+
+            <!-- شاخص‌های کلیدی عملکرد -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 text-center">
+                    <div class="text-xs text-slate-400 mb-1">امتیاز کل مأموریت</div>
+                    <div id="finalScoreVal" class="text-2xl sm:text-3xl font-black text-amber-400">۰</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 text-center">
+                    <div class="text-xs text-slate-400 mb-1">شاخص حافظه فعال (Working Memory)</div>
+                    <div id="memoryScoreVal" class="text-2xl sm:text-3xl font-black text-sky-400">۰٪</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 text-center">
+                    <div class="text-xs text-slate-400 mb-1">شاخص استدلال منطقی (Logical Analysis)</div>
+                    <div id="logicScoreVal" class="text-2xl sm:text-3xl font-black text-emerald-400">۰٪</div>
+                </div>
+            </div>
+
+            <!-- نمودار میله‌ای مقایسه مهارت‌ها -->
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 mb-6 space-y-4">
+                <h3 class="font-bold text-sm sm:text-base text-slate-200 border-b border-slate-700 pb-2">
+                    📊 تحلیل تفکیکی مهارت‌های شناختی شما
+                </h3>
+                
+                <div>
+                    <div class="flex justify-between text-xs sm:text-sm mb-1">
+                        <span class="text-sky-300 font-bold">دقت کدگذاری و بازیابی حافظه بصری</span>
+                        <span id="memBarLabel" class="font-bold text-slate-300">۰٪</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
+                        <div id="memBarFill" class="h-full bg-sky-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs sm:text-sm mb-1">
+                        <span class="text-emerald-300 font-bold">سرعت و صحت استنتاج منطقی و الگویابی</span>
+                        <span id="logicBarLabel" class="font-bold text-slate-300">۰٪</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
+                        <div id="logicBarFill" class="h-full bg-emerald-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- توصیه آموزشی شخصی‌سازی‌شده -->
+            <div class="bg-indigo-950/70 border border-indigo-500/40 rounded-2xl p-5 mb-8">
+                <h4 class="font-bold text-amber-300 text-sm sm:text-base mb-2 flex items-center gap-2">
+                    <span>🎓</span>
+                    <span>توصیه مربی ذهن برای پیشرفت شما:</span>
+                </h4>
+                <p id="personalizedAdvice" class="text-xs sm:text-sm text-slate-200 leading-relaxed"></p>
+            </div>
+
+            <!-- دکمه‌های پایان بازی -->
+            <div class="flex flex-wrap items-center justify-center gap-4">
+                <button onclick="restartSameDifficulty()" class="px-6 py-3 rounded-xl bg-gradient-to-l from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 font-bold text-white shadow-lg transition">
+                    تکرار همین سطح 🔄
+                </button>
+                <button onclick="showStartScreen()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-slate-200 transition">
+                    تغییر سطح دشواری 🏠
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- فوتر -->
+    <footer class="w-full max-w-4xl text-center text-xs text-slate-400 py-2">
+        طراحی شده برای تقویت حافظه فعال، تمرکز و تفکر تحلیلی دانش‌آموزان
+    </footer>
+
+    <!-- مودال تأیید خروج (جایگزین confirm استاندارد) -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div class="text-3xl mb-3">⚠️</div>
+            <h3 class="text-lg font-bold text-white mb-2">خروج از پرونده فعلی؟</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mb-6">با بازگشت به منوی اصلی، امتیاز این مرحله ذخیره نخواهد شد.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm">
+                    ادامه بازی
+                </button>
+                <button onclick="exitToHome()" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm">
+                    بله، خارج شو
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           ۱. مدیریت جلوه‌های صوتی با Web Audio API (بدون نیاز به فایل خارجی)
+           ========================================================================== */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type = 'sine', duration = 0.15, delay = 0) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+                
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + delay);
+                osc.stop(audioCtx.currentTime + delay + duration);
+            } catch (e) {
+                // نادیده گرفتن خطاهای احتمالی صوتی در مرورگر
+            }
+        }
+
+        const SFX = {
+            flip: () => playTone(420, 'triangle', 0.12),
+            tick: () => playTone(680, 'sine', 0.05),
+            correct: () => {
+                playTone(523.25, 'sine', 0.15, 0);     // Do
+                playTone(659.25, 'sine', 0.15, 0.1);   // Mi
+                playTone(783.99, 'sine', 0.25, 0.2);   // Sol
+            },
+            wrong: () => {
+                playTone(260, 'sawtooth', 0.2, 0);
+                playTone(195, 'sawtooth', 0.3, 0.15);
+            },
+            finish: () => {
+                playTone(523.25, 'triangle', 0.15, 0);
+                playTone(659.25, 'triangle', 0.15, 0.12);
+                playTone(783.99, 'triangle', 0.15, 0.24);
+                playTone(1046.5, 'triangle', 0.4, 0.36);
+            }
+        };
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggleBtn').textContent = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) playTone(550, 'sine', 0.1);
+        }
+
+        /* ==========================================================================
+           ۲. داده‌ها و تنظیمات پایه بازی
+           ========================================================================== */
+        const COLORS = [
+            { id: 'red', name: 'قرمز', bg: 'bg-rose-500/25', border: 'border-rose-400', text: 'text-rose-300', badge: 'bg-rose-500' },
+            { id: 'blue', name: 'آبی', bg: 'bg-sky-500/25', border: 'border-sky-400', text: 'text-sky-300', badge: 'bg-sky-500' },
+            { id: 'green', name: 'سبز', bg: 'bg-emerald-500/25', border: 'border-emerald-400', text: 'text-emerald-300', badge: 'bg-emerald-500' },
+            { id: 'yellow', name: 'زرد', bg: 'bg-amber-500/25', border: 'border-amber-400', text: 'text-amber-300', badge: 'bg-amber-500' },
+            { id: 'purple', name: 'بنفش', bg: 'bg-purple-500/25', border: 'border-purple-400', text: 'text-purple-300', badge: 'bg-purple-500' }
+        ];
+
+        const SHAPES = [
+            { id: 'circle', name: 'دایره', svg: `<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg>` },
+            { id: 'square', name: 'مربع', svg: `<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>` },
+            { id: 'triangle', name: 'مثلث', svg: `<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,3 22,20 2,20"/></svg>` },
+            { id: 'star', name: 'ستاره', svg: `<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>` },
+            { id: 'diamond', name: 'لوزی', svg: `<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 22,12 12,22 2,12"/></svg>` }
+        ];
+
+        const DIFFICULTIES = {
+            easy: { rows: 1, cols: 3, observeSec: 10, answerSec: 40, rounds: 5, maxNum: 5, label: 'مبتدی' },
+            medium: { rows: 2, cols: 2, observeSec: 8, answerSec: 35, rounds: 5, maxNum: 9, label: 'متوسط' },
+            hard: { rows: 2, cols: 3, observeSec: 7, answerSec: 35, rounds: 5, maxNum: 12, label: 'پیشرفته' }
+        };
+
+        const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        function toPersianNum(num) {
+            return String(num).replace(/\d/g, d => PERSIAN_DIGITS[d]);
+        }
+
+        const ROW_NAMES = ['اول', 'دوم', 'سوم'];
+        const COL_NAMES = ['اول', 'دوم', 'سوم'];
+
+        /* ==========================================================================
+           ۳. وضعیت (State) بازی
+           ========================================================================== */
+        let gameState = {
+            difficulty: 'easy',
+            currentRound: 1,
+            totalRounds: 5,
+            score: 0,
+            memoryPoints: 0,
+            memoryMax: 0,
+            logicPoints: 0,
+            logicMax: 0,
+            cards: [],
+            currentPuzzle: null,
+            phase: 'idle', // observe, puzzle, feedback
+            hintUsed: false,
+            timerInterval: null,
+            timeLeft: 0,
+            maxTime: 0
+        };
+
+        /* ==========================================================================
+           ۴. کنترل ناوبری و شروع بازی
+           ========================================================================== */
+        function startGame(diffKey) {
+            initAudio();
+            SFX.flip();
+            const cfg = DIFFICULTIES[diffKey];
+            gameState = {
+                difficulty: diffKey,
+                currentRound: 1,
+                totalRounds: cfg.rounds,
+                score: 0,
+                memoryPoints: 0,
+                memoryMax: 0,
+                logicPoints: 0,
+                logicMax: 0,
+                cards: [],
+                currentPuzzle: null,
+                phase: 'observe',
+                hintUsed: false,
+                timerInterval: null,
+                timeLeft: cfg.observeSec,
+                maxTime: cfg.observeSec
+            };
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('reportScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('hudStats').classList.remove('hidden');
+            document.getElementById('homeBtn').classList.remove('hidden');
+
+            updateHUD();
+            setupRound();
+        }
+
+        function restartSameDifficulty() {
+            startGame(gameState.difficulty);
+        }
+
+        function showStartScreen() {
+            clearInterval(gameState.timerInterval);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('reportScreen').classList.add('hidden');
+            document.getElementById('hudStats').classList.add('hidden');
+            document.getElementById('homeBtn').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function confirmReturnHome() {
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function exitToHome() {
+            closeConfirmModal();
+            showStartScreen();
+        }
+
+        function updateHUD() {
+            document.getElementById('roundDisplay').textContent = `${toPersianNum(gameState.currentRound)}/${toPersianNum(gameState.totalRounds)}`;
+            document.getElementById('scoreDisplay').textContent = toPersianNum(gameState.score);
+        }
+
+        /* ==========================================================================
+           ۵. تولید کارت‌ها و موتور هوشمند تولید معماهای تحلیلی
+           ========================================================================== */
+        function generateGridCards(rows, cols, maxNum) {
+            const total = rows * cols;
+            const cards = [];
+            const usedColors = [];
+            const usedShapes = [];
+            const usedNumbers = new Set();
+
+            // برای اینکه سرنخ‌های رنگی و شکلی یکتا و قابل استنتاج باشند
+            const shuffledColors = [...COLORS].sort(() => Math.random() - 0.5);
+            const shuffledShapes = [...SHAPES].sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < total; i++) {
+                const r = Math.floor(i / cols);
+                const c = i % cols;
+                
+                let num;
+                do {
+                    num = Math.floor(Math.random() * maxNum) + 1;
+                } while (usedNumbers.has(num));
+                usedNumbers.add(num);
+
+                // انتخاب رنگ و شکل با اولویت یکتایی در شبکه‌های کوچک و تنوع بالا در شبکه‌های بزرگ
+                const color = shuffledColors[i % shuffledColors.length];
+                const shape = shuffledShapes[(i + Math.floor(i / shuffledShapes.length)) % shuffledShapes.length];
+
+                cards.push({
+                    index: i,
+                    row: r,
+                    col: c,
+                    number: num,
+                    color: color,
+                    shape: shape
+                });
+            }
+            return cards;
+        }
+
+        // موتور تولید معمای ترکیبی (حافظه + منطق ریاضی / الگویابی / استنتاج حذفی)
+        function generateAnalyticalPuzzle(cards, rows, cols) {
+            // در سطح ساده (easy) معماهای تک‌مرحله‌ای، مستقیم و شفاف طراحی می‌شوند
+            if (gameState.difficulty === 'easy') {
+                const easyModes = ['direct_color_num', 'direct_shape_color', 'simple_compare'];
+                const mode = easyModes[(gameState.currentRound - 1) % easyModes.length];
+                const target = cards[Math.floor(Math.random() * cards.length)];
+
+                if (mode === 'direct_color_num') {
+                    const correctAnswer = target.number;
+                    const optionsSet = new Set([correctAnswer]);
+                    while (optionsSet.size < 4) {
+                        const candidate = Math.floor(Math.random() * 8) + 1;
+                        if (candidate !== correctAnswer) optionsSet.add(candidate);
+                    }
+                    return {
+                        category: 'حافظه رنگ و عدد',
+                        question: `روی کارت «${target.color.name} رنگ» چه عددی نوشته شده بود؟`,
+                        options: Array.from(optionsSet).sort(() => Math.random() - 0.5).map(val => ({
+                            label: `عدد ${toPersianNum(val)}`,
+                            value: val
+                        })),
+                        correctValue: correctAnswer,
+                        explanation: `کارت ${target.color.name} رنگ، شکل ${target.shape.name} داشت و عدد ${toPersianNum(target.number)} روی آن نوشته شده بود.`,
+                        memoryWeight: 0.7,
+                        logicWeight: 0.3
+                    };
+                }
+
+                if (mode === 'direct_shape_color') {
+                    const correctAnswer = target.shape.id;
+                    const otherShapes = SHAPES.filter(s => s.id !== correctAnswer).sort(() => Math.random() - 0.5).slice(0, 3);
+                    const allOpts = [target.shape, ...otherShapes].sort(() => Math.random() - 0.5);
+                    return {
+                        category: 'تشخیص شکل و جایگاه',
+                        question: `کارتِ «ستون ${COL_NAMES[target.col]}» چه شکلی داشت؟`,
+                        options: allOpts.map(s => ({
+                            label: s.name,
+                            value: s.id
+                        })),
+                        correctValue: correctAnswer,
+                        explanation: `در ستون ${COL_NAMES[target.col]} کارت ${target.color.name} با شکل «${target.shape.name}» و عدد ${toPersianNum(target.number)} قرار داشت.`,
+                        memoryWeight: 0.65,
+                        logicWeight: 0.35
+                    };
+                }
+
+                // حالت سوم ساده: پیدا کردن بزرگ‌ترین یا کوچک‌ترین عدد بین ۳ کارت
+                const sorted = [...cards].sort((a, b) => a.number - b.number);
+                const askMax = Math.random() > 0.5;
+                const chosen = askMax ? sorted[sorted.length - 1] : sorted[0];
+                const distractors = COLORS.filter(c => c.id !== chosen.color.id).slice(0, 3);
+                const colorOpts = [chosen.color, ...distractors].sort(() => Math.random() - 0.5);
+
+                return {
+                    category: 'مقایسه منطقی ساده',
+                    question: `کدام کارت «${askMax ? 'بزرگ‌ترین' : 'کوچک‌ترین'} عدد» را داشت؟`,
+                    options: colorOpts.map(c => ({
+                        label: `کارت ${c.name} رنگ`,
+                        value: c.id
+                    })),
+                    correctValue: chosen.color.id,
+                    explanation: `اعداد کارت‌ها به ترتیب ${sorted.map(c => `${toPersianNum(c.number)} (${c.color.name})`).join('، ')} بودند؛ پس کارت ${chosen.color.name} ${askMax ? 'بزرگ‌ترین' : 'کوچک‌ترین'} عدد را داشت.`,
+                    memoryWeight: 0.5,
+                    logicWeight: 0.5
+                };
+            }
+
+            const puzzleTypes = ['coord_color_math', 'sequence_pattern', 'deduction_elimination'];
+            // انتخاب نوع معما بر اساس شماره مرحله برای تنوع کامل
+            const selectedType = puzzleTypes[(gameState.currentRound - 1) % puzzleTypes.length];
+
+            // شمارش تکرار رنگ‌ها و شکل‌ها برای اطمینان از یکتا بودن سرنخ‌ها
+            const colorCounts = {};
+            const shapeCounts = {};
+            cards.forEach(c => {
+                colorCounts[c.color.id] = (colorCounts[c.color.id] || 0) + 1;
+                shapeCounts[c.shape.id] = (shapeCounts[c.shape.id] || 0) + 1;
+            });
+
+            const uniqueColorCards = cards.filter(c => colorCounts[c.color.id] === 1);
+            const uniqueShapeCards = cards.filter(c => shapeCounts[c.shape.id] === 1);
+
+            // نوع ۱: معمای ترکیب مختصات و ویژگی بصری (مثلاً: خانه ردیف اول و ستون دوم به علاوه کارت قرمز رنگ)
+            if (selectedType === 'coord_color_math' && uniqueColorCards.length >= 1) {
+                const targetColorCard = uniqueColorCards[Math.floor(Math.random() * uniqueColorCards.length)];
+                const otherCards = cards.filter(c => c.index !== targetColorCard.index);
+                const coordCard = otherCards[Math.floor(Math.random() * otherCards.length)];
+
+                const isAddition = Math.random() > 0.35 || (coordCard.number === targetColorCard.number);
+                let correctAnswer, questionText, explanation;
+
+                if (isAddition) {
+                    correctAnswer = coordCard.number + targetColorCard.number;
+                    questionText = `عددِ خانه «ردیف ${ROW_NAMES[coordCard.row]} و ستون ${COL_NAMES[coordCard.col]}» به علاوه عددِ کارت «${targetColorCard.color.name} رنگ» چه عددی می‌شود؟`;
+                    explanation = `در ردیف ${ROW_NAMES[coordCard.row]} و ستون ${COL_NAMES[coordCard.col]} کارت (${coordCard.shape.name} ${coordCard.color.name}) با عدد ${toPersianNum(coordCard.number)} قرار داشت، و کارت ${targetColorCard.color.name} رنگ دارای عدد ${toPersianNum(targetColorCard.number)} بود. حاصل جمع آن‌ها برابر با ${toPersianNum(coordCard.number)} + ${toPersianNum(targetColorCard.number)} = ${toPersianNum(correctAnswer)} است.`;
+                } else {
+                    const big = Math.max(coordCard.number, targetColorCard.number);
+                    const small = Math.min(coordCard.number, targetColorCard.number);
+                    correctAnswer = big - small;
+                    questionText = `اختلاف (تفاضل) عددِ خانه «ردیف ${ROW_NAMES[coordCard.row]} و ستون ${COL_NAMES[coordCard.col]}» با عددِ کارت «${targetColorCard.color.name} رنگ» چقدر است؟`;
+                    explanation = `عدد خانه ردیف ${ROW_NAMES[coordCard.row]} و ستون ${COL_NAMES[coordCard.col]} برابر ${toPersianNum(coordCard.number)} و عدد کارت ${targetColorCard.color.name} برابر ${toPersianNum(targetColorCard.number)} بود. اختلاف این دو عدد برابر ${toPersianNum(big)} - ${toPersianNum(small)} = ${toPersianNum(correctAnswer)} می‌شود.`;
+                }
+
+                // ساخت گزینه‌های انحرافی هوشمند
+                const optionsSet = new Set([correctAnswer]);
+                while (optionsSet.size < 4) {
+                    const offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                    const candidate = correctAnswer + offset;
+                    if (candidate >= 0 && candidate !== correctAnswer) {
+                        optionsSet.add(candidate);
+                    }
+                }
+
+                return {
+                    category: 'محاسبه و مختصات فضایی',
+                    question: questionText,
+                    options: Array.from(optionsSet).sort(() => Math.random() - 0.5).map(val => ({
+                        label: toPersianNum(val),
+                        value: val
+                    })),
+                    correctValue: correctAnswer,
+                    explanation: explanation,
+                    memoryWeight: 0.6,
+                    logicWeight: 0.4
+                };
+            }
+
+            // نوع ۲: الگویابی و دنباله منطقی بر اساس کارت‌های مشاهده شده
+            if (selectedType === 'sequence_pattern' && uniqueShapeCards.length >= 2) {
+                const c1 = uniqueShapeCards[0];
+                const c2 = uniqueShapeCards[1];
+                // ساخت دنباله حسابی یا هندسی بر اساس اعداد دو کارت
+                const step = c2.number - c1.number;
+                const thirdVal = c2.number + step;
+                const fourthVal = thirdVal + step;
+
+                const questionText = `اگر از عددِ کارت «${c1.shape.name}» شروع کنیم و به عددِ کارت «${c2.shape.name}» برسیم، با ادامه همین الگوی عددی، به جای علامت سؤال چه عددی قرار می‌گیرد؟\n[ ${toPersianNum(c1.number)}  ←  ${toPersianNum(c2.number)}  ←  ${toPersianNum(thirdVal)}  ←  ؟ ]`;
+                
+                const explanation = `کارت ${c1.shape.name} عدد ${toPersianNum(c1.number)} و کارت ${c2.shape.name} عدد ${toPersianNum(c2.number)} را داشت. رابطه بین این دو عدد (${step >= 0 ? '+' + toPersianNum(step) : toPersianNum(step)}) است. بنابراین با ادامه همین الگو پس از ${toPersianNum(thirdVal)}، عدد ${toPersianNum(fourthVal)} به دست می‌آید.`;
+
+                const optionsSet = new Set([fourthVal]);
+                while (optionsSet.size < 4) {
+                    const delta = (Math.floor(Math.random() * 4) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                    const fake = fourthVal + delta;
+                    if (fake !== fourthVal) optionsSet.add(fake);
+                }
+
+                return {
+                    category: 'کشف الگوی دنباله',
+                    question: questionText,
+                    options: Array.from(optionsSet).sort(() => Math.random() - 0.5).map(val => ({
+                        label: toPersianNum(val),
+                        value: val
+                    })),
+                    correctValue: fourthVal,
+                    explanation: explanation,
+                    memoryWeight: 0.45,
+                    logicWeight: 0.55
+                };
+            }
+
+            // نوع ۳: استنتاج منطقی و قانون حذف (Elimination & Deduction)
+            // مرتب‌سازی کارت‌ها بر اساس عدد
+            const sortedByNum = [...cards].sort((a, b) => a.number - b.number);
+            const smallestCard = sortedByNum[0];
+            const largestCard = sortedByNum[sortedByNum.length - 1];
+            const middleCard = sortedByNum[Math.floor(sortedByNum.length / 2)];
+
+            const askLargest = Math.random() > 0.5;
+            const targetCard = askLargest ? largestCard : smallestCard;
+
+            const questionText = askLargest
+                ? `با توجه به کارت‌هایی که در شبکه دیدی، کدام گزینه «بزرگ‌ترین عدد» جدول را نشان می‌دهد؟`
+                : `با توجه به کارت‌هایی که در شبکه دیدی، کدام گزینه «کوچک‌ترین عدد» جدول را نشان می‌دهد؟`;
+
+            // گزینه‌ها شامل ترکیب (رنگ + شکل + موقعیت) هستند تا دانش‌آموز چند ویژگی را همزمان تحلیل کند
+            const distractorCards = cards.filter(c => c.index !== targetCard.index)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+
+            const optionCards = [targetCard, ...distractorCards].sort(() => Math.random() - 0.5);
+
+            const explanation = `${askLargest ? 'بزرگ‌ترین' : 'کوچک‌ترین'} عدد در کل جدول عدد ${toPersianNum(targetCard.number)} بود که روی کارت «${targetCard.shape.name} ${targetCard.color.name}» در ردیف ${ROW_NAMES[targetCard.row]} و ستون ${COL_NAMES[targetCard.col]} قرار داشت.`;
+
+            return {
+                category: 'استنتاج و مقایسه چندبعدی',
+                question: questionText,
+                options: optionCards.map(c => ({
+                    label: `${c.shape.name} ${c.color.name} (ردیف ${ROW_NAMES[c.row]}، ستون ${COL_NAMES[c.col]})`,
+                    value: c.index
+                })),
+                correctValue: targetCard.index,
+                explanation: explanation,
+                memoryWeight: 0.5,
+                logicWeight: 0.5
+            };
+        }
+
+        /* ==========================================================================
+           ۶. رندر رابط کاربری مرحله مشاهده و معما
+           ========================================================================== */
+        function setupRound() {
+            const cfg = DIFFICULTIES[gameState.difficulty];
+            gameState.cards = generateGridCards(cfg.rows, cfg.cols, cfg.maxNum);
+            gameState.currentPuzzle = generateAnalyticalPuzzle(gameState.cards, cfg.rows, cfg.cols);
+            gameState.phase = 'observe';
+            gameState.hintUsed = false;
+
+            const hintBtn = document.getElementById('hintBtn');
+            if (hintBtn) {
+                hintBtn.disabled = false;
+                hintBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                hintBtn.innerHTML = '<span>💡 سرنخ (نمایش موقت ۱ کارت)</span>';
+            }
+
+            // مخفی کردن بخش معما و نمایش دکمه رد کردن زمان
+            document.getElementById('puzzleSection').classList.add('hidden');
+            document.getElementById('feedbackBox').classList.add('hidden');
+            document.getElementById('skipObserveBtn').classList.remove('hidden');
+
+            // تنظیم نشانگر فاز
+            const badge = document.getElementById('phaseBadge');
+            badge.className = 'px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-sky-500/20 text-sky-300 border border-sky-400/40';
+            badge.textContent = '👁️ فاز ۱: اسکن و به خاطر سپاری الگوها';
+
+            renderGrid(cfg.rows, cfg.cols, true);
+            startPhaseTimer(cfg.observeSec, () => {
+                endObservePhase();
+            });
+        }
+
+        function renderGrid(rows, cols, faceUp) {
+            const colHeaders = document.getElementById('colHeaders');
+            const rowHeaders = document.getElementById('rowHeaders');
+            const grid = document.getElementById('cardsGrid');
+
+            colHeaders.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+            colHeaders.innerHTML = '';
+            for (let c = 0; c < cols; c++) {
+                colHeaders.innerHTML += `<div>ستون ${COL_NAMES[c]}</div>`;
+            }
+
+            rowHeaders.innerHTML = '';
+            for (let r = 0; r < rows; r++) {
+                rowHeaders.innerHTML += `<div class="flex items-center justify-center">ردیف ${ROW_NAMES[r]}</div>`;
+            }
+
+            grid.innerHTML = '';
+            gameState.cards.forEach((card, idx) => {
+                const cardEl = document.createElement('div');
+                cardEl.id = `card-${idx}`;
+                cardEl.className = `card-container h-24 sm:h-28 ${faceUp ? 'card-flipped' : ''}`;
+                
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <!-- پشت کارت (حالت مخفی) -->
+                        <div class="card-back">
+                            <span class="text-2xl sm:text-3xl text-sky-400/70 font-black">؟</span>
+                            <span class="text-[10px] text-slate-400 mt-1">(${toPersianNum(card.row + 1)},${toPersianNum(card.col + 1)})</span>
+                        </div>
+                        <!-- روی کارت (اطلاعات بصری و عددی) -->
+                        <div class="card-front ${card.color.bg} ${card.color.border} p-2">
+                            <div class="${card.color.text} mb-1">
+                                ${card.shape.svg}
+                            </div>
+                            <div class="text-xl sm:text-2xl font-black text-white drop-shadow">
+                                ${toPersianNum(card.number)}
+                            </div>
+                            <div class="text-[10px] sm:text-xs font-bold ${card.color.text} mt-0.5">
+                                ${card.color.name}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function startPhaseTimer(seconds, onComplete) {
+            clearInterval(gameState.timerInterval);
+            gameState.maxTime = seconds;
+            gameState.timeLeft = seconds;
+
+            const timerText = document.getElementById('timerText');
+            const timerBar = document.getElementById('timerBar');
+
+            timerText.textContent = `${toPersianNum(seconds.toFixed(1))} ثانیه`;
+            timerBar.style.width = '100%';
+
+            const step = 0.1;
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft = Math.max(0, +(gameState.timeLeft - step).toFixed(1));
+                timerText.textContent = `${toPersianNum(gameState.timeLeft.toFixed(1))} ثانیه`;
+                const pct = (gameState.timeLeft / gameState.maxTime) * 100;
+                timerBar.style.width = `${pct}%`;
+
+                if (gameState.timeLeft <= 3 && gameState.timeLeft > 0 && Math.abs(gameState.timeLeft % 1) < 0.05) {
+                    SFX.tick();
+                }
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    onComplete();
+                }
+            }, 100);
+        }
+
+        function endObservePhase() {
+            if (gameState.phase !== 'observe') return;
+            clearInterval(gameState.timerInterval);
+            SFX.flip();
+            gameState.phase = 'puzzle';
+
+            // برگرداندن کارت‌ها به حالت مخفی
+            gameState.cards.forEach((_, idx) => {
+                const el = document.getElementById(`card-${idx}`);
+                if (el) el.classList.remove('card-flipped');
+            });
+
+            document.getElementById('skipObserveBtn').classList.add('hidden');
+            
+            // به‌روزرسانی نشانگر فاز ۲
+            const badge = document.getElementById('phaseBadge');
+            badge.className = 'px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40';
+            badge.textContent = '🧩 فاز ۲: تحلیل منطقی و رمزگشایی';
+
+            // مخفی کردن زمان‌سنج در فاز پاسخگویی تا دانش‌آموز بدون استرس فکر کند
+            document.getElementById('timerText').textContent = 'بدون محدودیت زمانی ♾️';
+            document.getElementById('timerBar').style.width = '100%';
+
+            // نمایش بخش معما
+            const puzzle = gameState.currentPuzzle;
+            document.getElementById('puzzleCategoryBadge').textContent = puzzle.category;
+            document.getElementById('puzzleQuestion').innerText = puzzle.question;
+
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+            puzzle.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/70 border-2 border-slate-600 hover:border-sky-400 text-right font-bold text-sm sm:text-base text-white transition-all duration-200 shadow-md active:scale-98';
+                btn.textContent = opt.label;
+                btn.onclick = () => submitAnswer(opt.value, btn);
+                optionsGrid.appendChild(btn);
+            });
+
+            document.getElementById('puzzleSection').classList.remove('hidden');
+        }
+
+        function useHint() {
+            if (gameState.phase !== 'puzzle' || gameState.hintUsed) return;
+            gameState.hintUsed = true;
+            SFX.flip();
+
+            const hintBtn = document.getElementById('hintBtn');
+            hintBtn.disabled = true;
+            hintBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            hintBtn.innerHTML = '<span>💡 سرنخ استفاده شد</span>';
+
+            // نمایش یکی از کارت‌ها به مدت ۲.۵ ثانیه برای کمک به یادآوری
+            const randomIdx = Math.floor(Math.random() * gameState.cards.length);
+            const cardEl = document.getElementById(`card-${randomIdx}`);
+            if (cardEl) {
+                cardEl.classList.add('card-flipped');
+                setTimeout(() => {
+                    if (gameState.phase === 'puzzle') {
+                        cardEl.classList.remove('card-flipped');
+                    }
+                }, 2500);
+            }
+        }
+
+        /* ==========================================================================
+           ۷. ارزیابی پاسخ، نمایش منطق پاسخ و امتیازدهی شناختی
+           ========================================================================== */
+        function submitAnswer(selectedValue, btnElement) {
+            if (gameState.phase !== 'puzzle') return;
+            clearInterval(gameState.timerInterval);
+            gameState.phase = 'feedback';
+
+            const puzzle = gameState.currentPuzzle;
+            const isCorrect = (selectedValue === puzzle.correctValue);
+
+            // محاسبه امتیاز مرحله بر اساس دقت پاسخ (بدون فشار زمانی)
+            const roundMaxPoints = 100;
+            const earned = isCorrect ? roundMaxPoints : 0;
+
+            gameState.score += earned;
+            gameState.memoryMax += Math.round(roundMaxPoints * puzzle.memoryWeight);
+            gameState.logicMax += Math.round(roundMaxPoints * puzzle.logicWeight);
+
+            if (isCorrect) {
+                gameState.memoryPoints += Math.round(roundMaxPoints * puzzle.memoryWeight);
+                gameState.logicPoints += Math.round(roundMaxPoints * puzzle.logicWeight);
+                SFX.correct();
+            } else {
+                SFX.wrong();
+            }
+
+            updateHUD();
+            revealAllCards();
+            highlightOptions(selectedValue, puzzle.correctValue);
+            showEducationalFeedback(isCorrect, earned, puzzle.explanation);
+        }
+
+        function handleTimeout() {
+            if (gameState.phase !== 'puzzle') return;
+            gameState.phase = 'feedback';
+            SFX.wrong();
+
+            const puzzle = gameState.currentPuzzle;
+            const roundMaxPoints = 100;
+            gameState.memoryMax += Math.round(roundMaxPoints * puzzle.memoryWeight);
+            gameState.logicMax += Math.round(roundMaxPoints * puzzle.logicWeight);
+
+            revealAllCards();
+            highlightOptions(null, puzzle.correctValue);
+            showEducationalFeedback(false, 0, `زمان این پرونده به پایان رسید! ${puzzle.explanation}`);
+        }
+
+        function revealAllCards() {
+            gameState.cards.forEach((_, idx) => {
+                const el = document.getElementById(`card-${idx}`);
+                if (el) el.classList.add('card-flipped');
+            });
+        }
+
+        function highlightOptions(selectedVal, correctVal) {
+            const buttons = document.querySelectorAll('.option-btn');
+            const puzzle = gameState.currentPuzzle;
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                const optVal = puzzle.options[i].value;
+                if (optVal === correctVal) {
+                    btn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl bg-emerald-900/80 border-2 border-emerald-400 text-right font-bold text-sm sm:text-base text-emerald-100 shadow-lg';
+                    btn.innerHTML = `✅ ${btn.textContent}`;
+                } else if (optVal === selectedVal) {
+                    btn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl bg-rose-900/80 border-2 border-rose-400 text-right font-bold text-sm sm:text-base text-rose-100';
+                    btn.innerHTML = `❌ ${btn.textContent}`;
+                } else {
+                    btn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl bg-slate-800/40 border border-slate-700 text-right font-bold text-sm sm:text-base text-slate-500';
+                }
+            });
+        }
+
+        function showEducationalFeedback(isCorrect, earnedPoints, explanationText) {
+            const box = document.getElementById('feedbackBox');
+            const icon = document.getElementById('feedbackIcon');
+            const title = document.getElementById('feedbackTitle');
+            const exp = document.getElementById('feedbackExplanation');
+            const nextBtn = document.getElementById('nextRoundBtn');
+
+            box.classList.remove('hidden');
+            if (isCorrect) {
+                box.className = 'rounded-2xl p-4 sm:p-5 border border-emerald-500/50 bg-emerald-950/60 transition-all duration-300';
+                icon.textContent = '🎯';
+                title.className = 'font-extrabold text-base sm:text-lg mb-1 text-emerald-300';
+                title.textContent = `آفرین کارآگاه! رمزگشایی دقیق بود (+${toPersianNum(earnedPoints)} امتیاز)`;
+            } else {
+                box.className = 'rounded-2xl p-4 sm:p-5 border border-rose-500/50 bg-rose-950/60 transition-all duration-300';
+                icon.textContent = '💡';
+                title.className = 'font-extrabold text-base sm:text-lg mb-1 text-rose-300';
+                title.textContent = 'نیاز به دقت بیشتر در تحلیل پرونده!';
+            }
+
+            exp.textContent = explanationText;
+            nextBtn.textContent = gameState.currentRound >= gameState.totalRounds ? 'مشاهده کارنامه نهایی 🏆' : 'پرونده بعدی ←';
+        }
+
+        function nextRound() {
+            SFX.flip();
+            if (gameState.currentRound >= gameState.totalRounds) {
+                showFinalReport();
+            } else {
+                gameState.currentRound++;
+                updateHUD();
+                setupRound();
+            }
+        }
+
+        /* ==========================================================================
+           ۸. تولید کارنامه نهایی و تحلیل شناختی دانش‌آموز
+           ========================================================================== */
+        function showFinalReport() {
+            SFX.finish();
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('hudStats').classList.add('hidden');
+            document.getElementById('reportScreen').classList.remove('hidden');
+
+            const memPct = gameState.memoryMax > 0 ? Math.round((gameState.memoryPoints / gameState.memoryMax) * 100) : 0;
+            const logicPct = gameState.logicMax > 0 ? Math.round((gameState.logicPoints / gameState.logicMax) * 100) : 0;
+            const avgPct = Math.round((memPct + logicPct) / 2);
+
+            document.getElementById('finalScoreVal').textContent = toPersianNum(gameState.score);
+            document.getElementById('memoryScoreVal').textContent = `${toPersianNum(memPct)}٪`;
+            document.getElementById('logicScoreVal').textContent = `${toPersianNum(logicPct)}٪`;
+
+            document.getElementById('memBarLabel').textContent = `${toPersianNum(memPct)}٪`;
+            document.getElementById('logicBarLabel').textContent = `${toPersianNum(logicPct)}٪`;
+
+            setTimeout(() => {
+                document.getElementById('memBarFill').style.width = `${memPct}%`;
+                document.getElementById('logicBarFill').style.width = `${logicPct}%`;
+            }, 150);
+
+            // تعیین عنوان رتبه و توصیه آموزشی اختصاصی
+            let rankTitle = '';
+            if (avgPct >= 85) {
+                rankTitle = 'نابغه رمزگشایی و استاد حافظه فعال 🌟';
+            } else if (avgPct >= 60) {
+                rankTitle = 'کارآگاه ارشد تحلیل و الگویابی 🕵️‍♂️';
+            } else {
+                rankTitle = 'کارآگاه نوآموز در مسیر پیشرفت 🚀';
+            }
+            document.getElementById('reportRankTitle').textContent = rankTitle;
+
+            let advice = '';
+            if (memPct >= 80 && logicPct >= 80) {
+                advice = 'عملکرد فوق‌العاده‌ای در هر دو بخش کدگذاری بصری و استدلال منطقی داشتی! پیشنهاد می‌شود سطح دشواری بالاتر را امتحان کنی تا ظرفیت حافظه فعال خود را بیشتر به چالش بکشی.';
+            } else if (memPct < logicPct) {
+                advice = 'قدرت استدلال و حل مسئله تو بسیار خوب است، اما برای بهبود ثبت اطلاعات در حافظه کوتاه‌مدت، سعی کن هنگام مشاهده کارت‌ها آن‌ها را در ذهن خود دسته‌بندی کنی (مثلاً: «مثلث آبی ۵» را به صورت یک عبارت کوتاه در ذهن تکرار کن).';
+            } else if (logicPct < memPct) {
+                advice = 'حافظه بصری قدرتمندی داری و جای کارت‌ها را خوب به خاطر می‌سپاری! برای تقویت بخش تحلیل، پس از پنهان شدن کارت‌ها ابتدا صورت معما را به دو بخش ساده تقسیم کن و سپس اعداد را با هم ترکیب کن.';
+            } else {
+                advice = 'برای تقویت همزمان حافظه و منطق، در مرحله مشاهده به جای حفظ کردن تک‌تک جزئیات به صورت پراکنده، یک الگوی ذهنی بین ردیف‌ها بساز و با آرامش گزینه‌های نادرست را حذف کن.';
+            }
+            document.getElementById('personalizedAdvice').textContent = advice;
+        }
+    </script>
+</body>
+</html>
